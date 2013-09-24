@@ -137,56 +137,37 @@ class Buscape_Sitemap_Model_Sitemap extends Mage_Sitemap_Model_Sitemap
                             Mage_Catalog_Model_Product_Type::TYPE_SIMPLE,
                             Mage_Catalog_Model_Product_Type::TYPE_VIRTUAL,
                     )))
-				->addAttributeToFilter('status', Mage_Catalog_Model_Product_Status::STATUS_ENABLED)
-				->addAttributeToFilter('visibility', Mage_Catalog_Model_Product_Visibility::VISIBILITY_BOTH);
-        
-        /*
-        $collection = Mage::getModel('catalog/product')->getCollection()
-            ->joinField('category_id', 'catalog_category_product', 'category_id', 'product_id=entity_id', null, 'inner')
-            ->joinField('category_path', 'catalog_category_entity', 'path', 'entity_id=category_id', null, 'inner')                
-            ->groupByAttribute('entity_id');*/
-        
-        $i = 1;
-        
-        $files = 1;
-        
-        $lines = 2000;
-        
-        $size = $collection->count();
-        
+                ->addAttributeToFilter('status', Mage_Catalog_Model_Product_Status::STATUS_ENABLED)
+                ->addAttributeToFilter('visibility', Mage_Catalog_Model_Product_Visibility::VISIBILITY_BOTH);
+
+        $io = new Varien_Io_File();
+
+        $io->setAllowCreateFolders(true);
+
+        $io->open(array('path' => $this->getData('path')));
+
+        $filename = $this->getSitemapFilename();
+
+        $this->setSitemapFilename($filename);
+
+        if ($io->fileExists($this->getSitemapFilename()) && !$io->isWriteable($this->getSitemapFilename())) {
+            Mage::throwException(Mage::helper('buscapemap')->__('File "%s" cannot be saved. Please, make sure the directory "%s" is writeable by web server.', $this->getSitemapFilename(), $this->getPath()));
+        }
+
+        if($io->fileExists($this->getSitemapFilename()))
+        {
+            $io->rm($this->getSitemapFilename());
+        }
+
+        $io->streamOpen($filename);
+
+        $io->streamWrite('<?xml version="1.0" encoding="UTF-8"?>');
+
+        $io->streamWrite("\n<sitemap>\n");
+
         foreach($collection as $item) {
             
             try {
-            
-                if($i == 1) {            
-
-                    $io = new Varien_Io_File();
-
-                    $io->setAllowCreateFolders(true);
-
-                    $io->open(array('path' => $this->getData('path')));
-
-                    //$filename = str_replace(".xml", "{$files}.xml", $this->getSitemapFilename());
-
-                    $filename = $this->getSitemapFilename();
-
-                    $this->setSitemapFilename($filename);
-
-                    if ($io->fileExists($this->getSitemapFilename()) && !$io->isWriteable($this->getSitemapFilename())) {
-                        Mage::throwException(Mage::helper('buscapemap')->__('File "%s" cannot be saved. Please, make sure the directory "%s" is writeable by web server.', $this->getSitemapFilename(), $this->getPath()));
-                    }
-
-                    if($io->fileExists($this->getSitemapFilename()))
-                    {
-                        $io->rm($this->getSitemapFilename());
-                    }
-
-                    $io->streamOpen($filename);
-
-                    $io->streamWrite('<?xml version="1.0" encoding="UTF-8"?>');
-
-                    $io->streamWrite("\n<sitemap>\n");
-                }
             
                 $product = Mage::getModel("catalog/product")->load($item->getId());
             
@@ -203,64 +184,39 @@ class Buscape_Sitemap_Model_Sitemap extends Mage_Sitemap_Model_Sitemap
     <id_filial>%s</id_filial>
 </produto>
 EOT;
+
+                $img = '';
+                try {
+                    $img = $product->getImageUrl();
+                } catch (Exception $e) {
+                    $img = '';
+                }
+
                 $xml = sprintf($template,
                     str_replace("&", " ", $product->getName()),
                     str_replace(".", ",", Mage::helper('checkout')->convertPrice($product->getFinalPrice(), false)),
                     $product->getId(),
                     $product->getEan(),
                     $product->getProductUrl(),
-                    $product->getImageUrl(),
+                    $img,
                     str_replace("/", ":", $product->getCategoryCollection()->getFirstItem()->getPath()),
-                    intval($product->getStockItem()->getQty()),   
+                    intval($product->getQty()),   
                     $this->_getConfig()->getAccount()
                 );
 
-
                 $xml .= "\n";
-
                 $io->streamWrite($xml);
-            
-                //if ($lines == $i || $size == $i) {
-
-                if ($size == $i) {
-                    
-                    $io->streamWrite("\n</sitemap>\n");
-                    
-                    $io->streamClose();
-                    
-                    $i = 1;
-                    
-                    $files++;
-                }
-
-                $i++;
-                
+    
             } catch(Exception $e) {
-                
-                $size--;
-                
                 Mage::logException($e);
-                
                 continue;
             }
         }
         
-        unset($collection);
-        
-        // verifica a quantidade de arquivos, caso tenham mais de 1 xml, deve ser criado o HTML e declarado o caminho do(s) xml nele.
-        
-        /*
-         * $io = new Varien_Io_File();
-         * $io->setAllowCreateFolders(true);
-         * $io->open(array('path' => $this->getData('path')));
-         * $filename = str_replace(".xml", "{$files}.xml", $this->getSitemapFilename());
+        $io->streamWrite("\n</sitemap>\n");
+        $io->streamClose();
 
-        foreach($listxml as $files)
-        {
-            $io->streamWrite('<a href="'.$files.'">'.$files.'</a><br />');
-        }
-        
-        $io->streamClose();*/
+        unset($collection);
         
         $this->setSitemapTime(Mage::getSingleton('core/date')->gmtDate('Y-m-d H:i:s'));
         
@@ -318,7 +274,7 @@ EOT;
         <ad:zip>%s</ad:zip>
     </ad:Address>
     <ad:Category value='%s' />
-    <ad:Pictures>			        	
+    <ad:Pictures>                       
         <ad:PictureURI>%s</ad:PictureURI>
     </ad:Pictures>
 </ad:Ad>
