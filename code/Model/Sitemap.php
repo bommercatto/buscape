@@ -192,15 +192,20 @@ EOT;
                     $img = '';
                 }
 
+                $shortDesc = json_decode($product->getShortDescription());
+                
+                if ($shortDesc->min_price <= 0 || $shortDesc->qty <= 0)
+                    Mage::throwException(Mage::helper('buscapemap')->__('Product with no quantity or no price.'));
+
                 $xml = sprintf($template,
                     str_replace("&", " ", $product->getName()),
-                    str_replace(".", ",", Mage::helper('checkout')->convertPrice($product->getFinalPrice(), false)),
+                    str_replace(".", ",", Mage::helper('checkout')->convertPrice($shortDesc->min_price, false)),
                     $product->getId(),
                     $product->getEan(),
                     $product->getProductUrl(),
                     $img,
                     str_replace("/", ":", $product->getCategoryCollection()->getFirstItem()->getPath()),
-                    intval($product->getQty()),   
+                    intval($shortDesc->qty),   
                     $this->_getConfig()->getAccount()
                 );
 
