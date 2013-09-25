@@ -17,3 +17,8 @@ Usando Modgit (recomendado)
 
 
     modgit add buscape_sitemap git@github.com:bommercatto/buscape.git
+    
+    
+    
+Configuração
+------------
