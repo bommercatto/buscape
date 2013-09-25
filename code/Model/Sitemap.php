@@ -185,13 +185,8 @@ class Buscape_Sitemap_Model_Sitemap extends Mage_Sitemap_Model_Sitemap
 </produto>
 EOT;
 
-                $img = '';
-                try {
-                    $img = $product->getImageUrl();
-                } catch (Exception $e) {
-                    $img = '';
-                }
-
+                
+                $img = $product->getImageUrl();
                 $shortDesc = json_decode($product->getShortDescription());
                 
                 if ($shortDesc->min_price <= 0 || $shortDesc->qty <= 0)
