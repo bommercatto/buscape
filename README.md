@@ -8,7 +8,7 @@ Módulo para criação do sitemap do buscapé
 
 
 
-Installation
+Instalação
 ------------
 
 
