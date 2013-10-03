@@ -37,7 +37,7 @@ class Buscape_Sitemap_Block_Admin_Main_Grid extends Mage_Adminhtml_Block_Widget_
         
         $collection = $model->getCollection();
         
-	$this->setCollection($collection);
+    	$this->setCollection($collection);
  
         return parent::_prepareCollection();
     }
@@ -104,7 +104,7 @@ class Buscape_Sitemap_Block_Admin_Main_Grid extends Mage_Adminhtml_Block_Widget_
             'header'        => Mage::helper('buscapemap')->__('Última data de criação'),
             'align'         => 'left',
             'width'         => '150px',
-            'filter_index'  => 'dt.last_time_created',
+            'filter_index'  => 'last_time_created',
             'index'         => 'last_time_created',
             'type'          => 'datetime',
             'truncate'      => 50,
