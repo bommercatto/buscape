@@ -161,9 +161,12 @@ class Buscape_Sitemap_Model_Sitemap extends Mage_Sitemap_Model_Sitemap
 
         $io->streamOpen($filename);
 
-        $io->streamWrite('<?xml version="1.0" encoding="UTF-8"?>');
+        $io->streamWrite("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+        date_default_timezone_set('America/Sao_Paulo');
+        $io->streamWrite("<!-- Generated at ".date('Y-m-d\TH:i:s\G\M\T\-\3')."-->\n");
 
-        $io->streamWrite("\n<sitemap>\n");
+        $io->streamWrite("<bommercatto>\n");
+        $io->streamWrite("\t<produtos>\n");
 
         foreach($collection as $item) {
             
@@ -172,35 +175,43 @@ class Buscape_Sitemap_Model_Sitemap extends Mage_Sitemap_Model_Sitemap
                 $product = Mage::getModel("catalog/product")->load($item->getId());
             
                 $template = <<<EOT
-<produto>
-    <descricao>%s</descricao>
-    <preco>%s</preco>
-    <id_produto>%s</id_produto>
-    <codigo_barra>%s</codigo_barra>
-    <link_prod>%s</link_prod>
-    <imagem>%s</imagem>
-    <categ>%s</categ>
-    <estoque>%s</estoque>
-    <id_filial>%s</id_filial>
-</produto>
+\t\t<produto>
+\t\t\t<descricao>%s</descricao>
+\t\t\t<preco>%s</preco>
+\t\t\t<id_produto>%s</id_produto>
+\t\t\t<codigo_barra>%s</codigo_barra>
+\t\t\t<link_prod>%s</link_prod>
+\t\t\t<imagem>%s</imagem>
+\t\t\t<categoria>%s</categoria>
+\t\t\t<parcelamento>%s</parcelamento>
+\t\t\t<disponibilidade>%s</disponibilidade>
+\t\t\t<id_filial>%s</id_filial>
+\t\t</produto>
 EOT;
 
-                
-                $img = $product->getImageUrl();
-                $shortDesc = json_decode($product->getShortDescription());
-                
-                if ($shortDesc->min_price <= 0 || $shortDesc->qty <= 0)
-                    Mage::throwException(Mage::helper('buscapemap')->__('Product with no quantity or no price.'));
 
+                $shortDesc = json_decode($product->getShortDescription());
+
+                if (!isset($shortDesc->min_price) || !isset($shortDesc->qty) || $shortDesc->min_price <= 0 || $shortDesc->qty <= 0) {
+                    continue;
+                }
+
+                $parcelamento = BM_Cmon::getFinancingTimes() . 'x de ';
+                $parcelamento .= 'R$ ' . number_format($shortDesc->min_price / BM_Cmon::getFinancingTimes(), 2, ',', '.');
+
+                $categoryId = $product->getCategoryCollection()->getFirstItem()->getId();
+                $category = Mage::getModel("catalog/category")->load($categoryId);
+                
                 $xml = sprintf($template,
                     str_replace("&", " ", $product->getName()),
-                    str_replace(".", ",", Mage::helper('checkout')->convertPrice($shortDesc->min_price, false)),
+                    'R$ ' . number_format($shortDesc->min_price, 2, ',', '.'),
                     $product->getId(),
                     $product->getEan(),
                     $product->getProductUrl(),
-                    $img,
-                    str_replace("/", ":", $product->getCategoryCollection()->getFirstItem()->getPath()),
-                    intval($shortDesc->qty),   
+                    $product->getImageUrl(),
+                    $category->getName(),
+                    $parcelamento,
+                    intval($shortDesc->qty),
                     $this->_getConfig()->getAccount()
                 );
 
@@ -213,7 +224,8 @@ EOT;
             }
         }
         
-        $io->streamWrite("\n</sitemap>\n");
+        $io->streamWrite("\t</produtos>\n");
+        $io->streamWrite("</bommercatto>\n");
         $io->streamClose();
 
         unset($collection);
