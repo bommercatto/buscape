@@ -196,8 +196,8 @@ EOT;
                     continue;
                 }
 
-                $parcelamento = BM_Cmon::getFinancingTimes() . 'x de ';
-                $parcelamento .= 'R$ ' . number_format($shortDesc->min_price / BM_Cmon::getFinancingTimes(), 2, ',', '.');
+                $parcelamento = Bm_Cmon::getFinancingTimes() . 'x de ';
+                $parcelamento .= 'R$ ' . number_format($shortDesc->min_price / Bm_Cmon::getFinancingTimes(), 2, ',', '.');
 
                 $categoryId = $product->getCategoryCollection()->getFirstItem()->getId();
                 $category = Mage::getModel("catalog/category")->load($categoryId);
