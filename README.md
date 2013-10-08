@@ -1,6 +1,6 @@
 Buscape Sitemap
 =======
-v1.0
+v0.1.5
 
 Introdução
 ------------
